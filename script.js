@@ -28,9 +28,11 @@ document.querySelectorAll('[data-year]').forEach(el => {
 });
 
 
-// Fine animated data-network background.
-// The visual is made from short local connections only.
-// No giant polygon mesh and no obvious particle-field effect.
+/* =========================================================
+   DATA CENTRE NETWORK BACKGROUND
+   Fine, short animated connections.
+   Slightly denser through the centre/right of the hero.
+   ========================================================= */
 
 (() => {
   const canvas = document.getElementById('network-canvas');
@@ -63,19 +65,19 @@ document.querySelectorAll('[data-year]').forEach(el => {
 
     if (width < 700) {
       return Math.max(
-        20,
+        24,
         Math.min(
-          30,
-          Math.round(area / 22000)
+          36,
+          Math.round(area / 18000)
         )
       );
     }
 
     return Math.max(
-      50,
+      62,
       Math.min(
-        72,
-        Math.round(area / 18500)
+        88,
+        Math.round(area / 16000)
       )
     );
   }
@@ -84,9 +86,14 @@ document.querySelectorAll('[data-year]').forEach(el => {
   function createPoints() {
     const total = getPointCount();
 
-    points = Array.from(
-      { length: total },
-      () => ({
+    points = [];
+
+    /*
+      Main evenly distributed network
+    */
+
+    for (let i = 0; i < total; i++) {
+      points.push({
         x: Math.random() * width,
         y: Math.random() * height,
 
@@ -97,8 +104,48 @@ document.querySelectorAll('[data-year]').forEach(el => {
         vy:
           (Math.random() - 0.5) *
           0.045
-      })
-    );
+      });
+    }
+
+
+    /*
+      Additional subtle density around the
+      centre/right side of the hero.
+
+      This helps the network sit behind and
+      around the DataLift without becoming busy.
+    */
+
+    const extraPoints =
+      width < 700
+        ? 4
+        : 12;
+
+    for (let i = 0; i < extraPoints; i++) {
+      points.push({
+        x:
+          width *
+          (
+            0.43 +
+            Math.random() * 0.5
+          ),
+
+        y:
+          height *
+          (
+            0.1 +
+            Math.random() * 0.8
+          ),
+
+        vx:
+          (Math.random() - 0.5) *
+          0.04,
+
+        vy:
+          (Math.random() - 0.5) *
+          0.04
+      });
+    }
   }
 
 
@@ -181,10 +228,17 @@ document.querySelectorAll('[data-year]').forEach(el => {
       height
     );
 
+    /*
+      Still deliberately short.
+
+      This prevents the effect turning back
+      into the large polygon mesh.
+    */
+
     const maxDistance =
       width < 700
-        ? 95
-        : 120;
+        ? 105
+        : 130;
 
 
     for (
@@ -235,25 +289,25 @@ document.querySelectorAll('[data-year]').forEach(el => {
 
 
         /*
-        Only draw reasonably close neighbours.
+          Only close neighbours connect.
 
-        This is what stops the effect
-        becoming the large polygon mesh
-        you were seeing before.
+          Slightly lower threshold than before
+          gives us more short connections without
+          introducing long lines.
         */
 
         if (
           closeness <
-          0.28
+          0.22
         ) {
           continue;
         }
 
 
         const alpha =
-          0.02 +
+          0.028 +
           closeness *
-          0.095;
+          0.12;
 
 
         ctx.beginPath();
@@ -271,15 +325,15 @@ document.querySelectorAll('[data-year]').forEach(el => {
 
         ctx.strokeStyle =
           `rgba(
-            65,
-            190,
-            200,
+            72,
+            196,
+            202,
             ${alpha}
           )`;
 
 
         ctx.lineWidth =
-          0.7;
+          0.72;
 
         ctx.stroke();
       }
@@ -287,12 +341,11 @@ document.querySelectorAll('[data-year]').forEach(el => {
 
 
     /*
-    Very small junction markers.
+      Tiny connection nodes.
 
-    These are deliberately faint
-    so the effect reads as
-    "connected network lines"
-    rather than "floating particles".
+      Visible enough to reinforce the
+      network idea, but not enough to look
+      like floating particles.
     */
 
     points.forEach(point => {
@@ -301,13 +354,13 @@ document.querySelectorAll('[data-year]').forEach(el => {
       ctx.arc(
         point.x,
         point.y,
-        0.55,
+        0.65,
         0,
         Math.PI * 2
       );
 
       ctx.fillStyle =
-        'rgba(115, 215, 218, 0.12)';
+        'rgba(120, 220, 220, 0.16)';
 
       ctx.fill();
     });
