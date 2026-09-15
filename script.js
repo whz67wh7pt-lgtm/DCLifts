@@ -30,23 +30,18 @@ document.querySelectorAll('[data-year]').forEach(el => {
 
 /* =========================================================
    DATA CENTRE NETWORK BACKGROUND
-   Fine, short animated connections.
-   Slightly denser through the centre/right of the hero.
+   Connected local clusters
    ========================================================= */
 
 (() => {
   const canvas = document.getElementById('network-canvas');
 
-  if (!canvas) {
-    return;
-  }
+  if (!canvas) return;
 
   const hero = canvas.closest('.hero');
   const ctx = canvas.getContext('2d');
 
-  if (!hero || !ctx) {
-    return;
-  }
+  if (!hero || !ctx) return;
 
   const reduceMotion = window.matchMedia(
     '(prefers-reduced-motion: reduce)'
@@ -67,17 +62,17 @@ document.querySelectorAll('[data-year]').forEach(el => {
       return Math.max(
         24,
         Math.min(
-          36,
-          Math.round(area / 18000)
+          34,
+          Math.round(area / 19000)
         )
       );
     }
 
     return Math.max(
-      62,
+      58,
       Math.min(
-        88,
-        Math.round(area / 16000)
+        82,
+        Math.round(area / 17000)
       )
     );
   }
@@ -88,54 +83,10 @@ document.querySelectorAll('[data-year]').forEach(el => {
 
     points = [];
 
-    /*
-      Main evenly distributed network
-    */
-
     for (let i = 0; i < total; i++) {
       points.push({
         x: Math.random() * width,
         y: Math.random() * height,
-
-        vx:
-          (Math.random() - 0.5) *
-          0.045,
-
-        vy:
-          (Math.random() - 0.5) *
-          0.045
-      });
-    }
-
-
-    /*
-      Additional subtle density around the
-      centre/right side of the hero.
-
-      This helps the network sit behind and
-      around the DataLift without becoming busy.
-    */
-
-    const extraPoints =
-      width < 700
-        ? 4
-        : 12;
-
-    for (let i = 0; i < extraPoints; i++) {
-      points.push({
-        x:
-          width *
-          (
-            0.43 +
-            Math.random() * 0.5
-          ),
-
-        y:
-          height *
-          (
-            0.1 +
-            Math.random() * 0.8
-          ),
 
         vx:
           (Math.random() - 0.5) *
@@ -144,6 +95,43 @@ document.querySelectorAll('[data-year]').forEach(el => {
         vy:
           (Math.random() - 0.5) *
           0.04
+      });
+    }
+
+
+    /*
+      Add a little extra network density
+      through the centre/right around the lift.
+    */
+
+    const extraPoints =
+      width < 700
+        ? 3
+        : 10;
+
+    for (let i = 0; i < extraPoints; i++) {
+      points.push({
+        x:
+          width *
+          (
+            0.45 +
+            Math.random() * 0.45
+          ),
+
+        y:
+          height *
+          (
+            0.08 +
+            Math.random() * 0.84
+          ),
+
+        vx:
+          (Math.random() - 0.5) *
+          0.035,
+
+        vy:
+          (Math.random() - 0.5) *
+          0.035
       });
     }
   }
@@ -200,8 +188,7 @@ document.querySelectorAll('[data-year]').forEach(el => {
       point.y += point.vy;
 
       if (point.x < -20) {
-        point.x =
-          width + 20;
+        point.x = width + 20;
       }
 
       if (point.x > width + 20) {
@@ -209,8 +196,7 @@ document.querySelectorAll('[data-year]').forEach(el => {
       }
 
       if (point.y < -20) {
-        point.y =
-          height + 20;
+        point.y = height + 20;
       }
 
       if (point.y > height + 20) {
@@ -228,34 +214,29 @@ document.querySelectorAll('[data-year]').forEach(el => {
       height
     );
 
-    /*
-      Still deliberately short.
-
-      This prevents the effect turning back
-      into the large polygon mesh.
-    */
-
     const maxDistance =
       width < 700
-        ? 105
-        : 130;
+        ? 115
+        : 145;
+
+    const drawnConnections =
+      new Set();
 
 
-    for (
-      let i = 0;
-      i < points.length;
-      i++
-    ) {
-      const pointA =
-        points[i];
+    /*
+      Connect every point to its nearest
+      2 or 3 neighbours only.
+    */
 
-      for (
-        let j = i + 1;
-        j < points.length;
-        j++
-      ) {
-        const pointB =
-          points[j];
+    points.forEach((pointA, indexA) => {
+
+      const neighbours = [];
+
+      points.forEach((pointB, indexB) => {
+
+        if (indexA === indexB) {
+          return;
+        }
 
         const dx =
           pointA.x -
@@ -265,104 +246,136 @@ document.querySelectorAll('[data-year]').forEach(el => {
           pointA.y -
           pointB.y;
 
-        const distanceSquared =
-          dx * dx +
-          dy * dy;
-
-        if (
-          distanceSquared >
-          maxDistance *
-          maxDistance
-        ) {
-          continue;
-        }
-
         const distance =
           Math.sqrt(
-            distanceSquared
+            dx * dx +
+            dy * dy
           );
 
-        const closeness =
-          1 -
-          distance /
-          maxDistance;
-
-
-        /*
-          Only close neighbours connect.
-
-          Slightly lower threshold than before
-          gives us more short connections without
-          introducing long lines.
-        */
-
-        if (
-          closeness <
-          0.22
-        ) {
-          continue;
+        if (distance <= maxDistance) {
+          neighbours.push({
+            index: indexB,
+            distance
+          });
         }
 
-
-        const alpha =
-          0.028 +
-          closeness *
-          0.12;
+      });
 
 
-        ctx.beginPath();
-
-        ctx.moveTo(
-          pointA.x,
-          pointA.y
-        );
-
-        ctx.lineTo(
-          pointB.x,
-          pointB.y
-        );
+      neighbours.sort(
+        (a, b) =>
+          a.distance -
+          b.distance
+      );
 
 
-        ctx.strokeStyle =
-          `rgba(
-            72,
-            196,
-            202,
-            ${alpha}
-          )`;
+      const connectionCount =
+        indexA % 3 === 0
+          ? 3
+          : 2;
 
 
-        ctx.lineWidth =
-          0.72;
+      neighbours
+        .slice(0, connectionCount)
+        .forEach(neighbour => {
 
-        ctx.stroke();
-      }
-    }
+          const indexB =
+            neighbour.index;
+
+          const connectionKey =
+            indexA < indexB
+              ? `${indexA}-${indexB}`
+              : `${indexB}-${indexA}`;
+
+
+          if (
+            drawnConnections.has(
+              connectionKey
+            )
+          ) {
+            return;
+          }
+
+
+          drawnConnections.add(
+            connectionKey
+          );
+
+
+          const pointB =
+            points[indexB];
+
+
+          const closeness =
+            1 -
+            neighbour.distance /
+            maxDistance;
+
+
+          /*
+            Slightly brighter than before,
+            but still subtle.
+          */
+
+          const alpha =
+            0.045 +
+            closeness *
+            0.14;
+
+
+          ctx.beginPath();
+
+          ctx.moveTo(
+            pointA.x,
+            pointA.y
+          );
+
+          ctx.lineTo(
+            pointB.x,
+            pointB.y
+          );
+
+
+          ctx.strokeStyle =
+            `rgba(
+              76,
+              198,
+              204,
+              ${alpha}
+            )`;
+
+
+          ctx.lineWidth =
+            0.75;
+
+          ctx.stroke();
+
+        });
+
+    });
 
 
     /*
-      Tiny connection nodes.
-
-      Visible enough to reinforce the
-      network idea, but not enough to look
-      like floating particles.
+      Tiny network nodes.
     */
 
     points.forEach(point => {
+
       ctx.beginPath();
 
       ctx.arc(
         point.x,
         point.y,
-        0.65,
+        0.7,
         0,
         Math.PI * 2
       );
 
       ctx.fillStyle =
-        'rgba(120, 220, 220, 0.16)';
+        'rgba(125, 220, 222, 0.18)';
 
       ctx.fill();
+
     });
   }
 
@@ -408,6 +421,7 @@ document.querySelectorAll('[data-year]').forEach(el => {
       }
 
       if (document.hidden) {
+
         if (frameId) {
           cancelAnimationFrame(
             frameId
@@ -415,14 +429,16 @@ document.querySelectorAll('[data-year]').forEach(el => {
         }
 
         frameId = null;
-      }
 
-      else if (!frameId) {
+      } else if (!frameId) {
+
         frameId =
           requestAnimationFrame(
             animate
           );
+
       }
+
     }
   );
 })();
